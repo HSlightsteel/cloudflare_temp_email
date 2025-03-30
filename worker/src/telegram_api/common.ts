@@ -21,7 +21,7 @@ export const tgUserNewAddress = async (
     const [name, domain] = address.includes("@") ? address.split("@") : [address, null];
     const jwtList = await c.env.KV.get<string[]>(`${CONSTANTS.TG_KV_PREFIX}:${userId}`, 'json') || [];
     if (jwtList.length >= getIntValue(c.env.TG_MAX_ADDRESS, 5)) {
-        throw Error("绑定地址数量已达上限");
+        throw Error("The number of bound emails has reached the limit");
     }
     // check name block list
     const value = await getJsonSetting(c, CONSTANTS.ADDRESS_BLOCK_LIST_KEY);
@@ -55,9 +55,9 @@ export const jwtListToAddressData = async (
             addressList.push(address as string);
             addressIdMap[address as string] = address_id as number;
         } catch (e) {
-            addressList.push("无效凭证");
+            addressList.push("Invalid credentials");
             invalidJwtList.push(jwt);
-            console.log(`获取地址列表失败: ${(e as Error).message}`);
+            console.log(`Failed to obtain address list: ${(e as Error).message}`);
         }
     }
     return { addressList, addressIdMap, invalidJwtList };
@@ -68,7 +68,7 @@ export const bindTelegramAddress = async (
 ): Promise<string> => {
     const { address } = await Jwt.verify(jwt, c.env.JWT_SECRET, "HS256");
     if (!address) {
-        throw Error("无效凭证");
+        throw Error("Invalid credentials");
     }
     const jwtList = await c.env.KV.get<string[]>(`${CONSTANTS.TG_KV_PREFIX}:${userId}`, 'json') || [];
     const { addressIdMap } = await jwtListToAddressData(c, jwtList);
@@ -76,7 +76,7 @@ export const bindTelegramAddress = async (
         return address as string;
     }
     if (jwtList.length >= getIntValue(c.env.TG_MAX_ADDRESS, 5)) {
-        throw Error("绑定地址数量已达上限");
+        throw Error("The number of bound emails has reached the limit");
     }
     await c.env.KV.put(`${CONSTANTS.TG_KV_PREFIX}:${userId}`, JSON.stringify([...jwtList, jwt]));
     // for mail push to telegram
@@ -96,7 +96,7 @@ export const unbindTelegramAddress = async (
                 continue;
             }
         } catch (e) {
-            console.log(`解绑失败: ${(e as Error).message}`);
+            console.log(`Unbinding failed: ${(e as Error).message}`);
         }
         newJwtList.push(jwt);
     }
@@ -123,7 +123,7 @@ export const deleteTelegramAddress = async (
     const jwtList = await c.env.KV.get<string[]>(`${CONSTANTS.TG_KV_PREFIX}:${userId}`, 'json') || [];
     const { addressIdMap } = await jwtListToAddressData(c, jwtList);
     if (!(address in addressIdMap)) {
-        throw Error("此地址不属于您");
+        throw Error("This address does not belong to you");
     }
     await deleteAddressWithData(c, null, addressIdMap[address])
     return true;
